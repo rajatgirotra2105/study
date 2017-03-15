@@ -4,6 +4,9 @@ from django.db import models
 from django.shortcuts import reverse
 from pygments.lexers import get_all_lexers
 from pygments.styles import get_all_styles
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.html import HtmlFormatter
+from pygments import highlight
 # Create your models here.
 
 
@@ -20,6 +23,8 @@ class Snippet(models.Model):
     linenos = models.BooleanField(default=False)
     language = models.CharField(choices=LANGUAGE_CHOICES, default='python', max_length=100)
     style = models.CharField(choices=STYLE_CHOICES, default='friendly', max_length=100)
+    owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)
+    highlighted = models.TextField()
 
     class Meta:
         ordering = ('-created',)  # order by created. Most recent first
@@ -29,6 +34,21 @@ class Snippet(models.Model):
 
     def __str__(self):
         return self.__unicode__()
+
+    # ignore the save() function as of now.
+    def save(self, *args, **kwargs):
+        """
+           Use the `pygments` library to create a highlighted HTML
+           representation of the code snippet.
+           """
+        lexer = get_lexer_by_name(self.language)
+        linenos = self.linenos and 'table' or False
+        options = self.title and {'title': self.title} or {}
+        formatter = HtmlFormatter(style=self.style, linenos=linenos,
+                                  full=True, **options)
+        self.highlighted = highlight(self.code, lexer, formatter)
+        print self.highlighted
+        super(Snippet, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse('snippets:detail', kwargs={'pk': self.id})

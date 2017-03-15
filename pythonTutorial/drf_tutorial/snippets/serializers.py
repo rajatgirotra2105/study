@@ -5,6 +5,7 @@
 # Note that DRF also has a browseable API  which can be used for adding/modifying/deleting Objects
 # and for viewing serialized data and debugging.
 
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import LANGUAGE_CHOICES, STYLE_CHOICES, Snippet
 
@@ -48,8 +49,18 @@ from .models import LANGUAGE_CHOICES, STYLE_CHOICES, Snippet
 
 # Lets use a ModelSerializer instead of just Serializer
 class SnippetSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     class Meta:
         model = Snippet
-        fields = ('id', 'created', 'title', 'code', 'linenos', 'language', 'style')
+        fields = ('id', 'created', 'title', 'code', 'linenos', 'language', 'style', 'owner')
 
 # Read somefile.py to understand the usage of a serializer class. Then go an and read views.py
+
+
+# adding a serializer for Django Auth Users
+class UserSerializer(serializers.ModelSerializer):
+    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'emails', 'snippets')
