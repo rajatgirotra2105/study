@@ -1,2 +1,2 @@
 # study
-My study and notes over accumulated over the years.
+My study and notes over the years
